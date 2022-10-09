@@ -4,7 +4,7 @@ import os
 import time
 from argparse import ArgumentParser
 from pathlib import Path
-import tensorflow as tf
+# import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
@@ -15,6 +15,9 @@ global output_directory
 
 
 def preprocess_wrap(tfrecord_file):
+    import tensorflow as tf
+    physical_devices = tf.config.list_physical_devices('GPU')
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
     preprocess(tfrecord_file, output_directory, frames_per_segment=None)
 
 
@@ -75,10 +78,13 @@ def preprocess_flying_things(input_dir, output_dir, view='right'):
 
 # https://github.com/tqdm/tqdm/issues/484
 if __name__ == '__main__':
-    tf.config.set_visible_devices([], 'GPU')
-    visible_devices = tf.config.get_visible_devices()
-    for device in visible_devices:
-        assert device.device_type != 'GPU'
+    # tf.config.set_visible_devices([], 'GPU')
+    # visible_devices = tf.config.get_visible_devices()
+    # for device in visible_devices:
+    #     assert device.device_type != 'GPU'
+
+
+
     parser = ArgumentParser()
     parser.add_argument('input_directory', type=str)
     parser.add_argument('output_directory', type=str)
@@ -113,9 +119,9 @@ if __name__ == '__main__':
                 exit(1)
             else:
                 n_cores = args.n_cores
-
+        # by akira: limit the process num, when GPU enabled, every process will consume about 3GB memory
+        n_cores = 6
         print(f"{n_cores} number of cores available")
-
         pool = mp.Pool(n_cores)
 
         tfrecord_filenames = []
