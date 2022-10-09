@@ -22,6 +22,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+# import sys
+
+# sys.path.append("/mnt/petrelfs/juxiaoliang/project/petrel_utils")
+from aws_path import AWSPath
+
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pathlib import Path
@@ -126,8 +131,10 @@ def cli():
 
     if args.use_group_norm:
         print("INFO: Using group norm instead of batch norm!")
-
-    dataset_path = Path(args.data_directory)
+    if args.data_directory.startswith("s3://"):
+        dataset_path = AWSPath(args.data_directory)
+    else:
+        dataset_path = Path(args.data_directory)
     # Check if the dataset exists
     if not dataset_path.is_dir() or not dataset_path.exists():
         print(f"Dataset directory not found: {dataset_path}")

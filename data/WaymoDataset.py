@@ -24,6 +24,9 @@ SOFTWARE.
 """
 import os
 import pickle
+from tkinter import N
+from petrel_helper import PetrelHelper
+import io
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -58,6 +61,10 @@ class WaymoDataset(Dataset):
         # It has information regarding the files and transformations
 
         self.data_path = data_path
+        self.petrel_helper = None
+        
+        if self.data_path.startswith("s3://"):
+            self.petrel_helper = PetrelHelper()
 
         self._drop_invalid_point_function = drop_invalid_point_function
         self._point_cloud_transform = point_cloud_transform
@@ -68,8 +75,12 @@ class WaymoDataset(Dataset):
         self._apply_pillarization = apply_pillarization
 
         try:
-            with open(metadata_path, 'rb') as metadata_file:
+            if metadata_path.startswith("s3://"):
+                metadata_file = self.petrel_helper.open(metadata_path, 'rb')
                 self.metadata = pickle.load(metadata_file)
+            else:
+                with open(metadata_path, 'rb') as metadata_file:
+                    self.metadata = pickle.load(metadata_file)
         except FileNotFoundError:
             raise FileNotFoundError("Metadata not found, please create it by running preprocess.py")
 
@@ -162,8 +173,24 @@ class WaymoDataset(Dataset):
         """
         # In the lookup table entries with (current_frame, previous_frame) are stored
         #print(self.metadata['look_up_table'][index][0][0])
-        current_frame = np.load(os.path.join(self.data_path, self.metadata['look_up_table'][index][0][0]))['frame']
-        previous_frame = np.load(os.path.join(self.data_path, self.metadata['look_up_table'][index][1][0]))['frame']
+        data_path = os.path.join(self.data_path, self.metadata['look_up_table'][index][0][0])
+        data_str = None
+        if data_path.startswith("s3://"):
+            # np load need the file-like object supports the seek operation
+            data_str = io.BytesIO(self.petrel_helper.open(data_path, 'rb').read())
+        else:
+            data_str = open(data_path, 'rb')
+        
+        current_frame = np.load(data_str)['frame']
+        
+        
+        data_path = os.path.join(self.data_path, self.metadata['look_up_table'][index][1][0])
+        data_str = None
+        if data_path.startswith("s3://"):
+            data_str = io.BytesIO(self.petrel_helper.open(data_path, 'rb').read())
+        else:
+            data_str = open(data_path, 'rb')
+        previous_frame = np.load(data_str)['frame']
         return current_frame, previous_frame
 
     def get_pose_transform(self, index):

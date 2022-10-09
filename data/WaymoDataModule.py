@@ -47,7 +47,7 @@ class WaymoDataModule(pl.LightningDataModule):
                  apply_pillarization=True,
                  shuffle_train=True):
         super(WaymoDataModule, self).__init__()
-        self._dataset_directory = Path(dataset_directory)
+        self._dataset_directory = dataset_directory
         self._batch_size = batch_size
         self._train_ = None
         self._val_ = None
