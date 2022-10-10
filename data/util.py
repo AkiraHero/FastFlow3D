@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 from torch.utils.data._utils.collate import default_collate
 
@@ -26,15 +27,21 @@ class ApplyPillarization:
 
 
 def drop_points_function(x_min, x_max, y_min, y_max, z_min, z_max):
-    def inner(x, y):
-        return remove_out_of_bounds_points(x, y,
-                                           x_min=x_min,
+    inner = partial(remove_out_of_bounds_points, x_min=x_min,
                                            y_min=y_min,
                                            z_min=z_min,
                                            z_max=z_max,
                                            x_max=x_max,
-                                           y_max=y_max
-                                           )
+                                           y_max=y_max)
+    # def inner(x, y):
+    #     return remove_out_of_bounds_points(x, y,
+    #                                        x_min=x_min,
+    #                                        y_min=y_min,
+    #                                        z_min=z_min,
+    #                                        z_max=z_max,
+    #                                        x_max=x_max,
+    #                                        y_max=y_max
+    #                                        )
 
     return inner
 

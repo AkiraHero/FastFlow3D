@@ -128,7 +128,7 @@ def get_args():
 
 def cli():
     args = get_args()
-
+    print(args)
     if args.use_group_norm:
         print("INFO: Using group norm instead of batch norm!")
     if args.data_directory.startswith("s3://"):

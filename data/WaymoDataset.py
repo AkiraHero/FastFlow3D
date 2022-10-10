@@ -61,10 +61,10 @@ class WaymoDataset(Dataset):
         # It has information regarding the files and transformations
 
         self.data_path = data_path
-        self.petrel_helper = None
+        self.ph = None
         
         if self.data_path.startswith("s3://"):
-            self.petrel_helper = PetrelHelper()
+            self.ph = PetrelHelper()
 
         self._drop_invalid_point_function = drop_invalid_point_function
         self._point_cloud_transform = point_cloud_transform
@@ -76,7 +76,7 @@ class WaymoDataset(Dataset):
 
         try:
             if metadata_path.startswith("s3://"):
-                metadata_file = self.petrel_helper.open(metadata_path, 'rb')
+                metadata_file = self.ph.open(metadata_path, 'rb')
                 self.metadata = pickle.load(metadata_file)
             else:
                 with open(metadata_path, 'rb') as metadata_file:
@@ -177,7 +177,7 @@ class WaymoDataset(Dataset):
         data_str = None
         if data_path.startswith("s3://"):
             # np load need the file-like object supports the seek operation
-            data_str = io.BytesIO(self.petrel_helper.open(data_path, 'rb').read())
+            data_str = io.BytesIO(self.ph.open(data_path, 'rb').read())
         else:
             data_str = open(data_path, 'rb')
         
@@ -187,7 +187,7 @@ class WaymoDataset(Dataset):
         data_path = os.path.join(self.data_path, self.metadata['look_up_table'][index][1][0])
         data_str = None
         if data_path.startswith("s3://"):
-            data_str = io.BytesIO(self.petrel_helper.open(data_path, 'rb').read())
+            data_str = io.BytesIO(self.ph.open(data_path, 'rb').read())
         else:
             data_str = open(data_path, 'rb')
         previous_frame = np.load(data_str)['frame']
