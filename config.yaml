@@ -1,0 +1,18 @@
+grid_cell_size:
+  value: 0.332
+x_min:
+  value: -85
+y_min:
+  value: -85
+z_min:
+  value: -85
+x_max:
+  value: 85
+y_max:
+  value: 85
+z_max:
+  value: 85
+n_pillars_x:
+  value: 512
+n_pillars_y:
+  value: 512

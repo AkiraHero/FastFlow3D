@@ -67,6 +67,7 @@ def get_coordinates_and_features(point_cloud, transform=None):
     return point_cloud
 
 
+
 def _pad_batch(batch):
     # Get the number of points in the largest point cloud
     true_number_of_points = [e[0].shape[0] for e in batch]

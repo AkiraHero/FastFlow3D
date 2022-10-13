@@ -5,7 +5,7 @@ import torch
 from tqdm import tqdm
 
 from data.util import custom_collate_batch
-
+from torch.utils.data import DataLoader
 
 def flownet_batch(batch, model):
     previous = []
@@ -37,6 +37,33 @@ def predict_flows(model, dataset, offset, architecture):
         batch = custom_collate_batch([((previous_frame, current_frame), flows)])
         with torch.no_grad():
             output = model(batch[0])
+        predicted_flows = output[0].data.cpu().numpy()
+        return predicted_flows
+    else:
+        print(f"Architecture {architecture} not implemented")
+        exit(1)
+        
+def predict_flows_batch(model, dataset, architecture, batch_size, num_workers):
+    if architecture == "FlowNet":
+        dataset.pillarize(False)
+        (previous_frame, current_frame), flows = dataset[offset]
+        # We set batchsize of 1 for predictions
+        batch = custom_collate_batch([((previous_frame, current_frame), flows)])
+        batch = flownet_batch(batch, model)
+        with torch.no_grad():
+            output = model(batch[0])
+        predicted_flows = output[0].data.cpu().numpy()
+        return predicted_flows
+    elif architecture == "FastFlowNet":  # This model always uses GPU
+        dataset.pillarize(True)
+        (previous_frame, current_frame), flows = dataset[offset]
+        
+        data_loader = DataLoader(dataset, batch_size, num_workers=num_workers,
+                          shuffle=False,
+                          collate_fn=custom_collate_batch)
+        for data_item in data_loader:
+            with torch.no_grad():
+                output = model(data_item)
         predicted_flows = output[0].data.cpu().numpy()
         return predicted_flows
     else:
