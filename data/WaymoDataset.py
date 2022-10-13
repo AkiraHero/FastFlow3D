@@ -47,7 +47,9 @@ class WaymoDataset(Dataset):
                  drop_invalid_point_function=None,
                  point_cloud_transform=None,
                  n_points=None,
-                 apply_pillarization=True):
+                 apply_pillarization=True,
+                 compensate_ego_motion=True,
+                 ):
         """
         Args:
             data_path (string): Folder with the compressed data.
@@ -85,6 +87,7 @@ class WaymoDataset(Dataset):
             raise FileNotFoundError("Metadata not found, please create it by running preprocess.py")
 
         self._n_points = n_points
+        self.compensate_ego_motion_to_pcl = compensate_ego_motion
 
     def __len__(self) -> int:
         return len(self.metadata['look_up_table'])
@@ -111,7 +114,20 @@ class WaymoDataset(Dataset):
         G_T_P = np.reshape(np.array(previous_frame_pose), [4, 4])
         C_T_P = np.linalg.inv(G_T_C) @ G_T_P
         # https://github.com/waymo-research/waymo-open-dataset/blob/bbcd77fc503622a292f0928bfa455f190ca5946e/waymo_open_dataset/utils/box_utils.py#L179
-        previous_frame = get_coordinates_and_features(previous_frame, transform=C_T_P)
+                # compensate ego
+        if self.compensate_ego_motion_to_pcl:
+            previous_frame = get_coordinates_and_features(previous_frame, transform=C_T_P)
+        # do not compensate ego
+        else:
+            C_T_P_inv = np.linalg.inv(C_T_P)
+            previous_frame = get_coordinates_and_features(previous_frame, transform=None)
+            # retrieve the initial flow
+            # flow is the velocity, frame rate = 10hz
+            frm_time_interval = 0.10 # unit: s
+            flows[:, :3] = (current_frame[:, :3] - get_coordinates_and_features(current_frame[:, :3] - flows[:, :3] * frm_time_interval, transform=C_T_P_inv)) / frm_time_interval
+            # note : if u decide not to compensate the flow as the code above, the flow information saving in the metadata is not valid.
+            # because in this repo, there is no effect to the the training procedure, we 【do not】 update the data saved in the metadata. 
+            
         current_frame = get_coordinates_and_features(current_frame, transform=None)
 
         # Drop invalid points according to the method supplied

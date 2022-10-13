@@ -105,6 +105,7 @@ def get_args():
                         help="Disable unused parameter check for ddp to improve speed. "
                              "See https://pytorch-lightning.readthedocs.io/en/stable/benchmarking/"
                              "performance.html#when-using-ddp-set-find-unused-parameters-false")
+    parser.add_argument('--compensate_ego_motion', action='store_true', default=False)
 
     # NOTE: Readd this to see all parameters of the trainer
     # parser = pl.Trainer.add_argparse_args(parser)  # Add arguments for the trainer
@@ -175,6 +176,7 @@ def cli():
         raise ValueError("no architecture {0} implemented".format(args.architecture))
 
     if args.dataset == 'waymo':
+        print("Use waymo dataset, compensate_ego_motion={}".format(args.compensate_ego_motion))
         data_module = WaymoDataModule(dataset_path, grid_cell_size=grid_cell_size, x_min=args.x_min,
                                       x_max=args.x_max, y_min=args.y_min,
                                       y_max=args.y_max, z_min=args.z_min, z_max=args.z_max,
@@ -182,7 +184,10 @@ def cli():
                                       has_test=args.test_data_available,
                                       num_workers=args.num_workers,
                                       n_pillars_x=n_pillars_x,
-                                      n_points=args.n_points, apply_pillarization=apply_pillarization)
+                                      n_points=args.n_points,
+                                      apply_pillarization=apply_pillarization,
+                                      compensate_ego_motion=args.compensate_ego_motion
+                                      )
     elif args.dataset == 'flying_things':
         data_module = FlyingThings3DDataModule(dataset_path,
                                                batch_size=args.batch_size,

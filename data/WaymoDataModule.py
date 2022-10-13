@@ -45,7 +45,9 @@ class WaymoDataModule(pl.LightningDataModule):
                  num_workers=1,
                  n_points=None,
                  apply_pillarization=True,
-                 shuffle_train=True):
+                 shuffle_train=True,
+                 compensate_ego_motion=True,
+                 ):
         super(WaymoDataModule, self).__init__()
         self._dataset_directory = dataset_directory
         self._batch_size = batch_size
@@ -69,6 +71,7 @@ class WaymoDataModule(pl.LightningDataModule):
 
         self._collate_fn = custom_collate_batch
         self._n_points = n_points
+        self.compensate_ego_motion = compensate_ego_motion
 
     def prepare_data(self) -> None:
         """
@@ -92,17 +95,22 @@ class WaymoDataModule(pl.LightningDataModule):
         self._train_ = WaymoDataset(self._dataset_directory.joinpath("train"),
                                     point_cloud_transform=self._pillarization_transform,
                                     drop_invalid_point_function=self._drop_points_function,
-                                    n_points=self._n_points, apply_pillarization=self.apply_pillarization)
+                                    n_points=self._n_points, apply_pillarization=self.apply_pillarization,
+                                    compensate_ego_motion=self.compensate_ego_motion
+                                    )
         self._val_ = WaymoDataset(self._dataset_directory.joinpath("valid"),
                                   point_cloud_transform=self._pillarization_transform,
                                   drop_invalid_point_function=self._drop_points_function,
                                   apply_pillarization=self.apply_pillarization,
-                                  n_points=self._n_points)
+                                  n_points=self._n_points,
+                                  compensate_ego_motion=self.compensate_ego_motion
+                                  )
         if self._has_test:
             self._test_ = WaymoDataset(self._dataset_directory.joinpath("test"),
                                        point_cloud_transform=self._pillarization_transform,
                                        drop_invalid_point_function=self._drop_points_function,
-                                       apply_pillarization=self.apply_pillarization
+                                       apply_pillarization=self.apply_pillarization,
+                                       compensate_ego_motion=self.compensate_ego_motion
                                        )
 
     def train_dataloader(self) -> Union[DataLoader, List[DataLoader], Dict[str, DataLoader]]:
